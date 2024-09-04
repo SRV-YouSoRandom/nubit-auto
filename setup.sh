@@ -19,9 +19,11 @@ fi
 
 # Step 4: Clone the Nubit repository and build the project
 echo "Cloning the Nubit repository and building the project..."
-sudo -u nubit git clone -b nubit-alphatestnet-1 git@github.com:RiemaLabs/nubit-node.git /home/nubit/nubit-node
-cd /home/nubit/nubit-node
-sudo make build install
+sudo -u nubit git clone -b nubit-alphatestnet-1 https://github.com/RiemaLabs/nubit-node.git /home/nubit/nubit-node
+cd /home/nubit/nubit-node || { echo "Directory not found, aborting."; exit 1; }
+
+# Adjusting the make command based on the available targets
+sudo make build install || sudo make install
 
 # Step 5: Set up the environment
 echo "Setting up the environment..."
@@ -38,6 +40,10 @@ rm -rf \$NUBIT_DATA_HOME
 
 # Step 7: Initialize the node
 echo 'Initializing the Nubit node...'
+if ! command -v nubit &> /dev/null; then
+    echo 'Error: Nubit command not found, aborting.'
+    exit 1
+fi
 nubit \$NODE_TYPE init --p2p.network \$NETWORK
 
 # Step 8: Remove old data directories
@@ -57,7 +63,7 @@ fi
 
 # Step 10: Extract the snapshot
 echo 'Extracting the snapshot...'
-tar -zxf \${NODE_TYPE}node_data.tgz -C \$NUBIT_DATA_HOME
+sudo tar -zxf \${NODE_TYPE}node_data.tgz -C \$NUBIT_DATA_HOME
 if [[ $? -ne 0 ]]; then
     echo 'Error: Failed to extract the snapshot!'
     exit 1
