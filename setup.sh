@@ -13,8 +13,7 @@ sudo apt-get install -y curl wget
 # Step 3: Ask the user if they want to run a Nubit light node
 read -p "Do you want to run a Nubit light node? (Y/n) " answer
 NODE_TYPE="full"
-if [[ $answer =~ ^[Yy]$ ]]
-then
+if [[ $answer =~ ^[Yy]$ ]]; then
     NODE_TYPE="light"
 fi
 
@@ -34,21 +33,40 @@ export FLAGS=\"--p2p.network \${NETWORK} --core.ip \${VALIDATOR_IP} --metrics --
 export NUBIT_DATA_HOME=\"\$HOME/.nubit-\${NODE_TYPE}-\${NETWORK}\"
 
 # Step 6: Clean setup
+echo 'Cleaning up any existing data...'
 rm -rf \$NUBIT_DATA_HOME
 
 # Step 7: Initialize the node
+echo 'Initializing the Nubit node...'
 nubit \$NODE_TYPE init --p2p.network \$NETWORK
 
 # Step 8: Remove old data directories
+echo 'Removing old data directories...'
 rm -rf \$NUBIT_DATA_HOME/blocks \$NUBIT_DATA_HOME/data \$NUBIT_DATA_HOME/index \$NUBIT_DATA_HOME/inverted_index \$NUBIT_DATA_HOME/transients
 
 # Step 9: Download the snapshot
-wget https://nubit-cdn.com/nubit-data/\${NODE_TYPE}node_data.tgz
+echo 'Downloading the snapshot...'
+SNAPSHOT_URL=\"https://nubit-cdn.com/nubit-data/\${NODE_TYPE}node_data.tgz\"
+wget -O \${NODE_TYPE}node_data.tgz \$SNAPSHOT_URL
+
+# Check if the download was successful
+if [[ $? -ne 0 ]]; then
+    echo 'Error: Snapshot download failed!'
+    exit 1
+fi
 
 # Step 10: Extract the snapshot
-tar -zxf \${NODE_TYPE}node_data.tgz -C \$NUBIT_DATA_HOME && rm -rf \${NODE_TYPE}node_data.tgz
+echo 'Extracting the snapshot...'
+tar -zxf \${NODE_TYPE}node_data.tgz -C \$NUBIT_DATA_HOME
+if [[ $? -ne 0 ]]; then
+    echo 'Error: Failed to extract the snapshot!'
+    exit 1
+fi
+
+rm -f \${NODE_TYPE}node_data.tgz
 
 # Step 11: Create a systemd service file
+echo 'Creating a systemd service file for the Nubit node...'
 echo \"[Unit]
 Description=Nubit Node
 After=network.target
